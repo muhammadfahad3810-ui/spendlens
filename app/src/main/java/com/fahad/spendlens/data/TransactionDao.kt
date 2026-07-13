@@ -30,4 +30,15 @@ interface TransactionDao {
 
     @Query("SELECT SUM(amount) FROM transactions WHERE dateMillis >= :fromMillis")
     fun getTotalSince(fromMillis: Long): Flow<Double?>
+
+    @Query("""
+        SELECT strftime('%Y-%m', dateMillis / 1000, 'unixepoch') AS month,
+               SUM(amount) AS total
+        FROM transactions
+        GROUP BY month
+        ORDER BY month ASC
+        LIMIT 6
+    """)
+    fun getMonthlyTotals(): Flow<List<MonthTotal>>
+
 }
