@@ -5,7 +5,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.fahad.spendlens.data.SpendLensDatabase
 import com.fahad.spendlens.data.TransactionEntity
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.random.Random
@@ -17,7 +19,36 @@ class HistoryViewModel(app: Application) : AndroidViewModel(app) {
     val transactions = dao.getAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Temporary — just to test the pipeline. The scanner will replace this.
+    // Holds the last deleted transaction so Undo can restore it
+    private val _recentlyDeleted = MutableStateFlow<TransactionEntity?>(null)
+    val recentlyDeleted = _recentlyDeleted.asStateFlow()
+
+    fun delete(transaction: TransactionEntity) {
+        viewModelScope.launch {
+            dao.delete(transaction)
+            _recentlyDeleted.value = transaction
+        }
+    }
+
+    fun undoDelete() {
+        val txn = _recentlyDeleted.value ?: return
+        viewModelScope.launch {
+            // Re-insert with id = 0 so Room assigns a fresh id
+            dao.insert(txn.copy(id = 0))
+            _recentlyDeleted.value = null
+        }
+    }
+
+    fun clearUndo() {
+        _recentlyDeleted.value = null
+    }
+
+    fun update(transaction: TransactionEntity) {
+        viewModelScope.launch {
+            dao.update(transaction)
+        }
+    }
+
     fun addTestTransaction() {
         viewModelScope.launch {
             val merchants = listOf("Al-Fatah Store", "Careem", "KFC", "Metro Cash&Carry", "Shell")
