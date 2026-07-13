@@ -61,6 +61,35 @@ object ReceiptParser {
         )
     }
 
+    /** Heuristic: does this OCR text plausibly come from a receipt? */
+    fun looksLikeReceipt(ocrText: String): Boolean {
+        val lower = ocrText.lowercase()
+        var signals = 0
+
+        // Money/receipt vocabulary
+        val receiptWords = listOf(
+            "total", "amount", "cash", "change", "price", "qty", "rate",
+            "rs", "pkr", "invoice", "receipt", "sale", "payment", "paid",
+            "balance", "discount", "subtotal", "vat", "gst", "tax"
+        )
+        if (receiptWords.count { lower.contains(it) } >= 2) signals += 2
+        else if (receiptWords.any { lower.contains(it) }) signals += 1
+
+        // Decimal amounts (12.50 style) — books rarely have them, receipts almost always do
+        val decimalCount = Regex("""\d+\.\d{2}\b""").findAll(ocrText).count()
+        if (decimalCount >= 2) signals += 2
+        else if (decimalCount == 1) signals += 1
+
+        // Currency markers
+        if (Regex("""(rs\.?|pkr|₨)\s*\d""", RegexOption.IGNORE_CASE).containsMatchIn(ocrText)) signals += 2
+
+        // Receipts are dense with digits; prose is not
+        val digitRatio = ocrText.count { it.isDigit() }.toFloat() / ocrText.length.coerceAtLeast(1)
+        if (digitRatio > 0.08f) signals += 1
+
+        return signals >= 3
+    }
+
     private fun extractMerchant(lines: List<String>): String {
         // Score the first several lines; highest score wins
         val candidates = lines.take(8).filter { line ->

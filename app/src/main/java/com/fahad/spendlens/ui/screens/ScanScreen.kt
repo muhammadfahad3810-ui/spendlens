@@ -99,7 +99,21 @@ fun ScanScreen(viewModel: ScanViewModel = viewModel()) {
                 }
 
                 state.error?.let { err ->
-                    Text("Error: $err", color = MaterialTheme.colorScheme.error)
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                err,
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            OutlinedButton(onClick = { viewModel.reset() }) {
+                                Text("Try again")
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -141,6 +155,11 @@ private fun ConfirmationForm(
                 value = amountText,
                 onValueChange = { amountText = it },
                 label = { Text("Amount (Rs)") },
+                isError = amountText.toDoubleOrNull() == null,
+                supportingText = {
+                    if (amountText.toDoubleOrNull() == null)
+                        Text("Couldn't detect the amount — enter it manually")
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 
