@@ -10,6 +10,9 @@ android {
         version = release(36) {
             minorApiLevel = 1
         }
+        androidResources {
+            noCompress += "tflite"
+        }
     }
 
     defaultConfig {
@@ -53,6 +56,7 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     implementation(libs.mlkit.text.recognition)
     implementation(libs.coil.compose)
+    implementation(libs.litert)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.navigation.compose)

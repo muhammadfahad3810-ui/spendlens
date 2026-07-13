@@ -66,6 +66,7 @@ fun ScanScreen(viewModel: ScanViewModel = viewModel()) {
             state.parsed != null -> {
                 ConfirmationForm(
                     parsed = state.parsed!!,
+                    suggestedCategory = viewModel.suggestCategory(state.parsed!!.merchant),
                     onSave = { merchant, amount, category ->
                         viewModel.saveTransaction(merchant, amount, category)
                     },
@@ -109,12 +110,13 @@ fun ScanScreen(viewModel: ScanViewModel = viewModel()) {
 @Composable
 private fun ConfirmationForm(
     parsed: com.fahad.spendlens.data.ParsedReceipt,
+    suggestedCategory: String,
     onSave: (String, Double, String) -> Unit,
     onRetry: () -> Unit
 ) {
     var merchant by remember { mutableStateOf(parsed.merchant) }
     var amountText by remember { mutableStateOf(parsed.total?.toString() ?: "") }
-    var category by remember { mutableStateOf(categories.first()) }
+    var category by remember { mutableStateOf(suggestedCategory) }   // ← was categories.first()
     var dropdownExpanded by remember { mutableStateOf(false) }
 
     Card(modifier = Modifier.fillMaxWidth()) {

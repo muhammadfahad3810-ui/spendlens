@@ -2,6 +2,7 @@ package com.fahad.spendlens.ui.screens
 
 import android.app.Application
 import android.net.Uri
+import com.fahad.spendlens.data.MerchantClassifier
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.fahad.spendlens.data.ParsedReceipt
@@ -31,6 +32,14 @@ class ScanViewModel(app: Application) : AndroidViewModel(app) {
 
     private val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
     private val dao = SpendLensDatabase.getInstance(app).transactionDao()
+
+    private val classifier = MerchantClassifier(app)
+
+    fun suggestCategory(merchant: String): String {
+        val (category, confidence) = classifier.classify(merchant)
+        // Only trust the model when it's reasonably sure
+        return if (confidence >= 0.5f) category else "Other"
+    }
 
     fun onImagePicked(uri: Uri) {
         _uiState.value = ScanUiState(imageUri = uri, isProcessing = true)
